@@ -1,0 +1,10 @@
+version: v3
+services: 
+  todo-api:
+    build: ./TodoApp/
+    ports:
+      - "8001:80"
+    environment:
+        - ASPNETCORE_ENVIRONMENT=Development
+#    depends_on:
+#      - db
