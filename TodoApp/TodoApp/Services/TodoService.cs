@@ -4,17 +4,13 @@ namespace TodoApp.Services;
 
 public interface ITodoService
 {
-    void AddTodo(Todo todo);
     Task<List<Todo>> GetTodosAsync();
+    void AddTodo(string createDtoTitle, string createDtoDescription);
 }
 
 public class TodoService : ITodoService
 {
-    private static readonly List<Todo> Todos = new List<Todo>();
-
-    public TodoService()
-    {
-    }
+    private static readonly List<Todo> Todos = new();
 
     public void AddTodo(Todo todo)
     {
@@ -24,5 +20,17 @@ public class TodoService : ITodoService
     public Task<List<Todo>> GetTodosAsync()
     {
         return Task.FromResult(Todos);
+    }
+
+    public void AddTodo(string createDtoTitle, string createDtoDescription)
+    {
+        var todo = new Todo
+        {
+            Id = Guid.NewGuid(),
+            Title = createDtoTitle,
+            Description = createDtoDescription
+        };
+
+        Todos.Add(todo);
     }
 }

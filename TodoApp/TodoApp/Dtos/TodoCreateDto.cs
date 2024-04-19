@@ -1,8 +1,7 @@
-﻿namespace TodoApp.Models;
+﻿namespace TodoApp.Dtos;
 
-public class Todo
+public class TodoCreateDto
 {
-    public Guid Id { get; set; }
     public string Title { get; set; }
     public string Description { get; set; }
 }

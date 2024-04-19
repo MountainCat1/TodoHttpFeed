@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TodoApp.Dtos;
 using TodoApp.Models;
 using TodoApp.Services;
 
@@ -24,9 +25,9 @@ public class TodoController : ControllerBase
     }
     
     [HttpPost]
-    public async Task<IActionResult> AddTodo([FromBody] Todo todo)
+    public async Task<IActionResult> AddTodo([FromBody] TodoCreateDto createDto)
     {
-        _todoService.AddTodo(todo);
+        _todoService.AddTodo(createDto.Title, createDto.Description);
 
         return Ok();
     }
