@@ -2,29 +2,29 @@
 
 namespace TodoApp.Services;
 
-public interface ITodoService
+public interface ITodoItemService
 {
-    Task<List<Todo>> GetTodosAsync();
+    Task<List<TodoItem>> GetTodosAsync();
     void AddTodo(string createDtoTitle, string createDtoDescription);
 }
 
-public class TodoService : ITodoService
+public class TodoItemService : ITodoItemService
 {
-    private static readonly List<Todo> Todos = new();
+    private static readonly List<TodoItem> Todos = new();
 
-    public void AddTodo(Todo todo)
+    public void AddTodo(TodoItem todoItem)
     {
-        Todos.Add(todo);
+        Todos.Add(todoItem);
     }
     
-    public Task<List<Todo>> GetTodosAsync()
+    public Task<List<TodoItem>> GetTodosAsync()
     {
         return Task.FromResult(Todos);
     }
 
     public void AddTodo(string createDtoTitle, string createDtoDescription)
     {
-        var todo = new Todo
+        var todo = new TodoItem
         {
             Id = Guid.NewGuid(),
             Title = createDtoTitle,

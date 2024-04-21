@@ -10,7 +10,7 @@ services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 
-services.AddScoped<ITodoService, TodoService>();
+services.AddScoped<ITodoItemService, TodoItemService>();
 
 var app = builder.Build();
 
