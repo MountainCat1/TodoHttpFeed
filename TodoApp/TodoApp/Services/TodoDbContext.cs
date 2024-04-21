@@ -23,6 +23,8 @@ public class TodoDbContext : DbContext
         todoItem.Property(x => x.Title).IsRequired().HasMaxLength(128);
         
         todoItem.Property(x => x.Description).HasMaxLength(512);
+        
+        todoItem.Property(x => x.CreatedDateTime).IsRequired();
     }
 
     public DbSet<TodoItem> TodoItems { get; set; } = null!;
