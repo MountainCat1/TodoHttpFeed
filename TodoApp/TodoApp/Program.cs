@@ -4,8 +4,6 @@ using TodoApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 var config = builder.Configuration;
 
 var services = builder.Services;
@@ -36,5 +34,12 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+if(config.GetValue("DO_MIGRATE", false) == true)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();

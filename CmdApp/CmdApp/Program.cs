@@ -19,10 +19,9 @@ public static class Program
             Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
         };
         
-        
         HttpClient client = new HttpClient()
         {
-            BaseAddress = new Uri(BaseUrl)
+            BaseAddress = new Uri(Environment.GetEnvironmentVariable("BACKEND_URL") ?? BaseUrl)
         };
 
         List<TodoItem> existingItems = new List<TodoItem>();
