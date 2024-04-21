@@ -1,14 +1,19 @@
+using Microsoft.EntityFrameworkCore;
 using TodoApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+var config = builder.Configuration;
+
 var services = builder.Services;
 
 services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
+
+services.AddDbContext<TodoDbContext>(x => x.UseSqlite(config.GetConnectionString("DefaultConnection")));
 
 services.AddScoped<ITodoItemService, TodoItemService>();
 

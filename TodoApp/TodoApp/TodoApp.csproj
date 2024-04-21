@@ -9,6 +9,13 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.4"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="7.0.18" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.18">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.18" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.18" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
 
@@ -16,6 +23,10 @@
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Extensions\ServiceCollection\" />
     </ItemGroup>
 
 </Project>

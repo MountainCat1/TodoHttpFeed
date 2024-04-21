@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using TodoApp.Dtos;
-using TodoApp.Models;
 using TodoApp.Services;
 
 namespace TodoApp.Controllers;
@@ -30,5 +29,13 @@ public class TodoItemController : ControllerBase
         _todoItemService.AddTodo(itemCreateDto.Title, itemCreateDto.Description);
 
         return Ok();
+    }
+    
+    [HttpGet("feed")]
+    public async Task<IActionResult> GetFeed([FromQuery] Guid lastTodoId, [FromQuery] int count = 5)
+    {
+        var todos = await _todoItemService.GetFeedAsync(lastTodoId, count);
+
+        return Ok(todos);
     }
 }
