@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Reflection.Metadata.Ecma335;
+using Microsoft.EntityFrameworkCore;
 using TodoApp.Models;
 
 namespace TodoApp.Services;
@@ -7,6 +8,8 @@ public interface ITodoItemService
 {
     Task<List<TodoItem>> GetTodosAsync();
     Task<TodoItem> AddTodoAsync(string createDtoTitle, string createDtoDescription);
+    Task<TodoItem> DeleteTodoAsync(Guid todoId);
+    Task<TodoItem> UpdateTodoAsync(Guid todoId, string updateDtoTitle, string updateDtoDescription);
 
     Task<ICollection<TodoItem>> GetFeedAsync(
         Guid? lastTodoId,
@@ -45,6 +48,33 @@ public class TodoItemService : ITodoItemService
         return todo;
     }
 
+    public async Task<TodoItem> DeleteTodoAsync(Guid todoId)
+    {
+        var todo = await _context.TodoItems.FindAsync(todoId);
+        if (todo == null)
+            throw new ArgumentException("Invalid todo item", nameof(todoId));
+
+        _context.TodoItems.Remove(todo);
+        await _context.SaveChangesAsync();
+        return todo;
+    }
+
+    public async Task<TodoItem> UpdateTodoAsync(Guid todoId, string updateDtoTitle, string updateDtoDescription)
+    {
+        var todo = await _context.TodoItems.FindAsync(todoId);
+        if (todo == null)
+            throw new ArgumentException("Invalid todo item", nameof(todoId));
+
+        todo.Title = updateDtoTitle;
+        todo.Description = updateDtoDescription;
+        todo.LastModifieDateTime = DateTime.UtcNow;
+
+        _context.TodoItems.Update(todo);
+        await _context.SaveChangesAsync();
+
+        return todo;
+    }
+
     public async Task<ICollection<TodoItem>> GetFeedAsync(
         Guid? lastTodoId,
         int count,
@@ -54,7 +84,7 @@ public class TodoItemService : ITodoItemService
         if (lastTodoId == null)
         {
             return await _context.TodoItems
-                .OrderBy(t => t.CreatedDateTime)
+                .OrderBy(t => t.LastModifieDateTime)
                 .Take(count)
                 .ToListAsync(ct);
         }
@@ -75,8 +105,8 @@ public class TodoItemService : ITodoItemService
                 while (!timeoutCancellationTokenSource.IsCancellationRequested)
                 {
                     var newItems = await _context.TodoItems
-                        .Where(t => t.CreatedDateTime > referenceItem.CreatedDateTime)
-                        .OrderBy(t => t.CreatedDateTime)
+                        .Where(t => t.LastModifieDateTime > referenceItem.LastModifieDateTime)
+                        .OrderBy(t => t.LastModifieDateTime)
                         .Take(count)
                         .ToListAsync(timeoutCancellationTokenSource.Token);
 

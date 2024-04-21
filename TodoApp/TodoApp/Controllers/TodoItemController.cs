@@ -30,6 +30,24 @@ public class TodoItemController : ControllerBase
 
         return Ok();
     }
+    
+    [HttpDelete("{todoId}")]
+    public async Task<IActionResult> DeleteTodo([FromRoute] Guid todoId)
+    {
+        await _todoItemService.DeleteTodoAsync(todoId);
+
+        return Ok();
+    }
+    
+    [HttpPut("{todoId}")]
+    public async Task<IActionResult> UpdateTodo(
+        [FromRoute] Guid todoId,
+        [FromBody] TodoItemUpdateDto itemUpdateDto)
+    {
+        await _todoItemService.UpdateTodoAsync(todoId, itemUpdateDto.Title, itemUpdateDto.Description);
+
+        return Ok();
+    }
 
     [HttpGet("feed")]
     public async Task<IActionResult> GetFeed(
