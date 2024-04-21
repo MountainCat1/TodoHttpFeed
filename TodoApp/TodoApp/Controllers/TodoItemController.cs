@@ -5,7 +5,7 @@ using TodoApp.Services;
 namespace TodoApp.Controllers;
 
 [ApiController]
-[Route("todo")]
+[Route("api/todo-items")]
 public class TodoItemController : ControllerBase
 {
     private readonly ITodoItemService _todoItemService;
@@ -26,7 +26,7 @@ public class TodoItemController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> AddTodo([FromBody] TodoItemCreateDto itemCreateDto)
     {
-        _todoItemService.AddTodo(itemCreateDto.Title, itemCreateDto.Description);
+        await _todoItemService.AddTodoAsync(itemCreateDto.Title, itemCreateDto.Description);
 
         return Ok();
     }
