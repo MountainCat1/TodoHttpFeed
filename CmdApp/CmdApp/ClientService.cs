@@ -13,6 +13,9 @@ public class ClientService
     private readonly string _lastIdPath;
     private readonly string _jsonFilePath;
 
+    private int _count = 3;
+    private int _timeout = 30;
+
     public ClientService(HttpClient client, string lastIdPath, string jsonFilePath)
     {
         _client = client;
@@ -39,7 +42,11 @@ public class ClientService
                 string url = "api/todo-items/feed";
                 if (!string.IsNullOrEmpty(_lastTodoId))
                 {
-                    url += $"?lastTodoId={_lastTodoId}&count=3&timeout=30"; // Request 5 items at a time
+                    url += $"?lastTodoId={_lastTodoId}&count={_count}&timeout={_timeout}";
+                }
+                else
+                {
+                    url += $"?count={_count}&timeout={_timeout}"; 
                 }
 
                 var response = await _client.GetAsync(url);
