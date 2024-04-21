@@ -42,7 +42,7 @@ public class ClientService
                 string url = "api/todo-items/feed";
                 if (!string.IsNullOrEmpty(_lastTodoId))
                 {
-                    url += $"?lastTodoId={_lastTodoId}&count={_count}&timeout={_timeout}";
+                    url += $"?lastEventId={_lastTodoId}&count={_count}&timeout={_timeout}";
                 }
                 else
                 {
