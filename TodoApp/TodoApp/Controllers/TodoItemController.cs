@@ -22,6 +22,17 @@ public class TodoItemController : ControllerBase
 
         return Ok(todos);
     }
+    
+    [HttpGet("{todoId}")]
+    public async Task<IActionResult> GetTodo([FromRoute] Guid todoId)
+    {
+        var todo = await _todoItemService.GetTodoAsync(todoId);
+        
+        if (todo == null)
+            return NotFound();
+
+        return Ok(todo);
+    }
 
     [HttpPost]
     public async Task<IActionResult> AddTodo([FromBody] TodoItemCreateDto itemCreateDto)

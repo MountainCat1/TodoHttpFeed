@@ -17,6 +17,8 @@ public interface ITodoItemService
         int count,
         int timeout = 5,
         CancellationToken ct = default);
+
+    Task<TodoItem?> GetTodoAsync(Guid todoId);
 }
 
 public class TodoItemService : ITodoItemService
@@ -138,7 +140,12 @@ public class TodoItemService : ITodoItemService
 
         return new List<TodoItemEvent>();
     }
-    
+
+    public async Task<TodoItem?> GetTodoAsync(Guid todoId)
+    {
+        return await _context.TodoItems.FindAsync(todoId);
+    }
+
     private static TodoItemEvent CreateEvent(TodoItem todo, EventMethods method)
     {
         if (method == EventMethods.Delete)
