@@ -62,12 +62,12 @@ public class TodoItemController : ControllerBase
 
     [HttpGet("feed")]
     public async Task<IActionResult> GetFeed(
-        [FromQuery] Guid? lastTodoId = null,
+        [FromQuery] Guid? lastEventId = null,
         [FromQuery] int timeout = 60,
         [FromQuery] int count = 5,
         CancellationToken ct = default)
     {
-        var todos = await _todoItemService.GetFeedAsync(lastTodoId, count, timeout, ct);
+        var todos = await _todoItemService.GetFeedAsync(lastEventId, count, timeout, ct);
         
         HttpContext.Response.ContentType = "application/cloudevents-batch+json";
         return Ok(todos);
