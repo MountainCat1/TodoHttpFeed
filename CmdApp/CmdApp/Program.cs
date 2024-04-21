@@ -9,7 +9,7 @@ public static class Program
 {
     private const string BaseUrl = "http://localhost:5000/";
     private const string LastIdPath = "lastTodoId.txt"; // File to store the last ID
-    private const string JsonFilePath = "ToDoItemsCurrentSnapshot.json"; // JSON file path
+    private const string JsonFilePath = "todo-items.json"; // JSON file path
     
     static async Task Main(string[] args)
     {
