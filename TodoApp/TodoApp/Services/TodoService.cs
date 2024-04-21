@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Reflection.Metadata.Ecma335;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using TodoApp.Models;
 
@@ -6,8 +7,8 @@ namespace TodoApp.Services;
 
 public interface ITodoItemService
 {
-    Task<List<TodoItem?>> GetTodosAsync();
-    Task<TodoItem?> AddTodoAsync(string createDtoTitle, string createDtoDescription);
+    Task<List<TodoItem>> GetTodosAsync();
+    Task<TodoItem> AddTodoAsync(string createDtoTitle, string createDtoDescription);
     Task<TodoItem> DeleteTodoAsync(Guid todoId);
     Task<TodoItem> UpdateTodoAsync(Guid todoId, string updateDtoTitle, string updateDtoDescription);
 
@@ -16,8 +17,6 @@ public interface ITodoItemService
         int count,
         int timeout = 5,
         CancellationToken ct = default);
-
-    Task<TodoItem?> GetTodoAsync(Guid todoItemId);
 }
 
 public class TodoItemService : ITodoItemService
@@ -29,12 +28,12 @@ public class TodoItemService : ITodoItemService
         _context = context;
     }
 
-    public Task<List<TodoItem?>> GetTodosAsync()
+    public Task<List<TodoItem>> GetTodosAsync()
     {
         return _context.TodoItems.ToListAsync();
     }
 
-    public async Task<TodoItem?> AddTodoAsync(string createDtoTitle, string createDtoDescription)
+    public async Task<TodoItem> AddTodoAsync(string createDtoTitle, string createDtoDescription)
     {
         var todo = new TodoItem
         {
@@ -139,12 +138,7 @@ public class TodoItemService : ITodoItemService
 
         return new List<TodoItemEvent>();
     }
-
-    public async Task<TodoItem?> GetTodoAsync(Guid todoItemId)
-    {
-        return await _context.TodoItems.FindAsync(todoItemId);
-    }
-
+    
     private static TodoItemEvent CreateEvent(TodoItem todo, EventMethods method)
     {
         if (method == EventMethods.Delete)
