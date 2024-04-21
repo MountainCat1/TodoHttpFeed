@@ -11,6 +11,7 @@ git clone https://github.com/MountainCat1/TodoHttpFeed.git
 ```
 2. Run
 ```bash
+cd TodoHttpFeed
 docker compose up
 ```
 ## Notes:
