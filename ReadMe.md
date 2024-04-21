@@ -13,7 +13,6 @@ git clone https://github.com/MountainCat1/TodoHttpFeed.git
 ```bash
 docker compose up
 ```
-##
-Notes:
+## Notes:
 - The Feed Server uses local mysql database to store todo items. Which means recreating the container will result in losing the data.
 - The Feed Client saves the todo items to a file named `todo-items.json`.
