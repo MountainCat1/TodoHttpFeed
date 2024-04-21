@@ -1,27 +1,37 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.Serialization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace CmdApp;
 
 public static class Program
 {
+    static readonly string _baseUrl = "http://localhost:5000/api/todo-items/feed";
+    static readonly string _lastIdPath = "lastTodoId.txt"; // File to store the last ID
+    static readonly string _jsonFilePath = "ToDoItemsCurrentSnapshot.json"; // JSON file path
+    static string _lastTodoId = null; // To store the last received TodoItem ID
+    
     static async Task Main(string[] args)
     {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        };
+        
+        
         HttpClient client = new HttpClient();
-        string baseUrl = "http://localhost:5000/api/todo-items/feed";
-        string lastTodoId = null; // To store the last received TodoItem ID
-        string lastIdPath = "lastTodoId.txt"; // File to store the last ID
-        string jsonFilePath = "ToDoItemsCurrentSnapshot.json"; // JSON file path
 
         // Try to read the last Todo ID from file if exists
-        if (File.Exists(lastIdPath))
+        if (File.Exists(_lastIdPath))
         {
-            lastTodoId = File.ReadAllText(lastIdPath);
+            _lastTodoId = File.ReadAllText(_lastIdPath);
         }
 
         List<TodoItem> existingItems = new List<TodoItem>();
-        if (File.Exists(jsonFilePath))
+        if (File.Exists(_jsonFilePath))
         {
-            string existingJson = File.ReadAllText(jsonFilePath);
+            string existingJson = File.ReadAllText(_jsonFilePath);
             existingItems = JsonSerializer.Deserialize<List<TodoItem>>(existingJson) ?? new List<TodoItem>();
         }
 
@@ -29,30 +39,26 @@ public static class Program
         {
             try
             {
-                string url = baseUrl;
-                if (!string.IsNullOrEmpty(lastTodoId))
+                string url = _baseUrl;
+                if (!string.IsNullOrEmpty(_lastTodoId))
                 {
-                    url += $"?lastTodoId={lastTodoId}&count=5&timeout=30"; // Request 5 items at a time
+                    url += $"?lastTodoId={_lastTodoId}&count=5&timeout=30"; // Request 5 items at a time
                 }
 
                 var response = await client.GetAsync(url);
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var feedResponse = JsonSerializer.Deserialize<FeedResponse>(content,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var feedResponse = JsonSerializer.Deserialize<TodoItemEvent[]>(content, options);
 
-                    if (feedResponse.Data.Count > 0)
+                    if (feedResponse.Length > 0)
                     {
-                        lastTodoId = feedResponse.LastTodoId;
-                        File.WriteAllText(lastIdPath, lastTodoId);
+                        Console.WriteLine($"Received {feedResponse.Length} new items.");
 
-                        existingItems.AddRange(feedResponse.Data);
-
-                        File.WriteAllText(jsonFilePath,
-                            JsonSerializer.Serialize(existingItems,
-                                new JsonSerializerOptions { WriteIndented = true }));
-                        Console.WriteLine($"Received {feedResponse.Data.Count} new items, snapshot updated.");
+                        HandleFeedResponse(feedResponse, existingItems);
+                        
+                        Console.WriteLine("Successfully applied snapshot.");
+                        Console.WriteLine($"Current items: {existingItems.Count}");
                     }
                     else
                     {
@@ -74,12 +80,79 @@ public static class Program
         // ReSharper disable once FunctionNeverReturns
     }
 
+    private static void HandleFeedResponse(TodoItemEvent[] feedResponse, List<TodoItem> existingItems)
+    {
+        _lastTodoId = feedResponse.Last().Id.ToString();
+
+        foreach (var @event in feedResponse)
+        {
+            if (@event.Method == EventMethods.Create)
+            {
+                var newItem = JsonSerializer.Deserialize<TodoItem>(@event.Data);
+
+                if (newItem == null)
+                    throw new SerializationException($"Failed to deserialize TodoItem from event data. {@event.Data}");
+                
+                existingItems.Add(newItem);
+                continue;
+            }
+            if (@event.Method == EventMethods.Update)
+            {
+                var updatedItem = JsonSerializer.Deserialize<TodoItem>(@event.Data);
+
+                if (updatedItem == null)
+                    throw new SerializationException($"Failed to deserialize TodoItem from event data. {@event.Data}");
+
+                var existingItem = existingItems.FirstOrDefault(x => x.Id == updatedItem.Id);
+                if (existingItem != null)
+                {
+                    existingItem.Title = updatedItem.Title;
+                    existingItem.Description = updatedItem.Description;
+                }
+                else
+                {
+                    existingItems.Add(updatedItem);
+                }
+                continue;
+            }
+            if (@event.Method == EventMethods.Delete)
+            {
+                var deletedItemId = new Guid(@event.Subject);
+
+                existingItems.RemoveAll(x => x.Id == deletedItemId);
+            }
+        }
+        
+        File.WriteAllText(_lastIdPath, _lastTodoId);
+
+        File.WriteAllText(_jsonFilePath,
+            JsonSerializer.Serialize(existingItems,
+                new JsonSerializerOptions { WriteIndented = true }));
+    }
+
     class FeedResponse
     {
-        public List<TodoItem> Data { get; set; }
+        public List<TodoItemEvent> Data { get; set; }
         public int Count { get; set; }
         public string LastTodoId { get; set; }
         public string Next { get; set; }
+    }
+    
+    public class TodoItemEvent
+    {
+        public Guid Id { get; set; }
+        public string Type { get; set; }
+        public EventMethods Method { get; set; } 
+        public DateTime Time { get; set; }
+        public string Data { get; set; }
+        public string Subject { get; set; }
+    }
+
+    public enum EventMethods
+    {
+        Create,
+        Update,
+        Delete
     }
 
     class TodoItem

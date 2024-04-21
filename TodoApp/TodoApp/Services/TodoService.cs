@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Metadata.Ecma335;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using TodoApp.Models;
 
@@ -11,7 +12,7 @@ public interface ITodoItemService
     Task<TodoItem> DeleteTodoAsync(Guid todoId);
     Task<TodoItem> UpdateTodoAsync(Guid todoId, string updateDtoTitle, string updateDtoDescription);
 
-    Task<ICollection<TodoItem>> GetFeedAsync(
+    Task<ICollection<TodoItemEvent>> GetFeedAsync(
         Guid? lastTodoId,
         int count,
         int timeout = 5,
@@ -44,6 +45,8 @@ public class TodoItemService : ITodoItemService
         };
 
         _context.TodoItems.Add(todo);
+        _context.TodoItemEvents.Add(CreateEvent(todo, EventMethods.Create));
+        
         await _context.SaveChangesAsync();
         return todo;
     }
@@ -55,6 +58,8 @@ public class TodoItemService : ITodoItemService
             throw new ArgumentException("Invalid todo item", nameof(todoId));
 
         _context.TodoItems.Remove(todo);
+        _context.TodoItemEvents.Add(CreateEvent(todo, EventMethods.Delete));
+        
         await _context.SaveChangesAsync();
         return todo;
     }
@@ -70,12 +75,14 @@ public class TodoItemService : ITodoItemService
         todo.LastModifieDateTime = DateTime.UtcNow;
 
         _context.TodoItems.Update(todo);
+        _context.TodoItemEvents.Add(CreateEvent(todo, EventMethods.Update));
+        
         await _context.SaveChangesAsync();
 
         return todo;
     }
 
-    public async Task<ICollection<TodoItem>> GetFeedAsync(
+    public async Task<ICollection<TodoItemEvent>> GetFeedAsync(
         Guid? lastTodoId,
         int count,
         int timeout = 5,
@@ -83,13 +90,13 @@ public class TodoItemService : ITodoItemService
     {
         if (lastTodoId == null)
         {
-            return await _context.TodoItems
-                .OrderBy(t => t.LastModifieDateTime)
+            return await _context.TodoItemEvents
+                .OrderBy(t => t.Time)
                 .Take(count)
                 .ToListAsync(ct);
         }
 
-        var referenceItem = await _context.TodoItems
+        var referenceItem = await _context.TodoItemEvents
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == lastTodoId, cancellationToken: ct);
 
@@ -104,9 +111,9 @@ public class TodoItemService : ITodoItemService
             {
                 while (!timeoutCancellationTokenSource.IsCancellationRequested)
                 {
-                    var newItems = await _context.TodoItems
-                        .Where(t => t.LastModifieDateTime > referenceItem.LastModifieDateTime)
-                        .OrderBy(t => t.LastModifieDateTime)
+                    var newItems = await _context.TodoItemEvents
+                        .Where(t => t.Time > referenceItem.Time)
+                        .OrderBy(t => t.Time)
                         .Take(count)
                         .ToListAsync(timeoutCancellationTokenSource.Token);
 
@@ -127,6 +134,32 @@ public class TodoItemService : ITodoItemService
             }
         }
 
-        return new List<TodoItem>();
+        return new List<TodoItemEvent>();
+    }
+    
+    private static TodoItemEvent CreateEvent(TodoItem todo, EventMethods method)
+    {
+        if (method == EventMethods.Delete)
+        {
+            return new TodoItemEvent()
+            {
+                // We dont add "data" while deleting
+                Id = Guid.NewGuid(),
+                Method = method,
+                Time = DateTime.UtcNow,
+                Type = typeof(TodoItem).FullName ?? nameof(TodoItem),
+                Subject = todo.Id.ToString()
+            };
+        }
+        
+        return new TodoItemEvent()
+        {
+            Data = JsonSerializer.Serialize(todo),
+            Id = Guid.NewGuid(),
+            Method = method,
+            Time = DateTime.UtcNow,
+            Type = typeof(TodoItem).FullName ?? nameof(TodoItem),
+            Subject = todo.Id.ToString()
+        };
     }
 }

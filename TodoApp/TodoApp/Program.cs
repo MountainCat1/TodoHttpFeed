@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using TodoApp.Services;
 
@@ -9,7 +10,11 @@ var config = builder.Configuration;
 
 var services = builder.Services;
 
-services.AddControllers();
+services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });;
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 

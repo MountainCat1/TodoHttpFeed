@@ -58,15 +58,15 @@ public class TodoItemController : ControllerBase
     {
         var todos = await _todoItemService.GetFeedAsync(lastTodoId, count, timeout, ct);
 
-        var response = new TodoFeedResponse()
-        {
-            Data = todos,
-            Count = todos.Count,
-            LastTodoId = todos.LastOrDefault()?.Id.ToString() ?? "none",
-            Next = Url.Action("GetFeed", new { lastTodoId = todos.LastOrDefault()?.Id, count = count })
-        };
+        // var response = new TodoFeedResponse()
+        // {
+        //     Data = todos,
+        //     Count = todos.Count,
+        //     LastTodoId = todos.LastOrDefault()?.Id.ToString() ?? "none",
+        //     Next = Url.Action("GetFeed", new { lastTodoId = todos.LastOrDefault()?.Id, count = count })
+        // };
 
         HttpContext.Response.ContentType = "application/cloudevents-batch+json";
-        return Ok(response);
+        return Ok(todos);
     }
 }
