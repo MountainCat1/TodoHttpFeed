@@ -22,7 +22,7 @@ public class TodoItemController : ControllerBase
 
         return Ok(todos);
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> AddTodo([FromBody] TodoItemCreateDto itemCreateDto)
     {
@@ -30,12 +30,25 @@ public class TodoItemController : ControllerBase
 
         return Ok();
     }
-    
-    [HttpGet("feed")]
-    public async Task<IActionResult> GetFeed([FromQuery] Guid lastTodoId, [FromQuery] int count = 5)
-    {
-        var todos = await _todoItemService.GetFeedAsync(lastTodoId, count);
 
-        return Ok(todos);
+    [HttpGet("feed")]
+    public async Task<IActionResult> GetFeed(
+        [FromQuery] Guid? lastTodoId = null,
+        [FromQuery] int timeout = 60,
+        [FromQuery] int count = 5,
+        CancellationToken ct = default)
+    {
+        var todos = await _todoItemService.GetFeedAsync(lastTodoId, count, timeout, ct);
+
+        var response = new TodoFeedResponse()
+        {
+            Data = todos,
+            Count = todos.Count,
+            LastTodoId = todos.LastOrDefault()?.Id.ToString() ?? "none",
+            Next = Url.Action("GetFeed", new { lastTodoId = todos.LastOrDefault()?.Id, count = count })
+        };
+
+        HttpContext.Response.ContentType = "application/cloudevents-batch+json";
+        return Ok(response);
     }
 }

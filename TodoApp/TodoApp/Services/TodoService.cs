@@ -7,7 +7,12 @@ public interface ITodoItemService
 {
     Task<List<TodoItem>> GetTodosAsync();
     Task<TodoItem> AddTodoAsync(string createDtoTitle, string createDtoDescription);
-    Task<TodoItem> GetFeedAsync(Guid lastTodoId, int count, CancellationToken ct = default);
+
+    Task<ICollection<TodoItem>> GetFeedAsync(
+        Guid? lastTodoId,
+        int count,
+        int timeout = 5,
+        CancellationToken ct = default);
 }
 
 public class TodoItemService : ITodoItemService
@@ -18,7 +23,7 @@ public class TodoItemService : ITodoItemService
     {
         _context = context;
     }
-    
+
     public Task<List<TodoItem>> GetTodosAsync()
     {
         return _context.TodoItems.ToListAsync();
@@ -30,7 +35,9 @@ public class TodoItemService : ITodoItemService
         {
             Id = Guid.NewGuid(),
             Title = createDtoTitle,
-            Description = createDtoDescription
+            Description = createDtoDescription,
+            CreatedDateTime = DateTime.UtcNow,
+            LastModifieDateTime = DateTime.UtcNow
         };
 
         _context.TodoItems.Add(todo);
@@ -38,8 +45,58 @@ public class TodoItemService : ITodoItemService
         return todo;
     }
 
-    public Task<TodoItem> GetFeedAsync(Guid lastTodoId, int count, CancellationToken ct = default)
+    public async Task<ICollection<TodoItem>> GetFeedAsync(
+        Guid? lastTodoId,
+        int count,
+        int timeout = 5,
+        CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        if (lastTodoId == null)
+        {
+            return await _context.TodoItems
+                .OrderBy(t => t.CreatedDateTime)
+                .Take(count)
+                .ToListAsync(ct);
+        }
+
+        var referenceItem = await _context.TodoItems
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == lastTodoId, cancellationToken: ct);
+
+        if (referenceItem == null)
+            throw new ArgumentException("Invalid reference item", nameof(lastTodoId));
+
+        using (var timeoutCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct))
+        {
+            timeoutCancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(timeout));
+
+            try
+            {
+                while (!timeoutCancellationTokenSource.IsCancellationRequested)
+                {
+                    var newItems = await _context.TodoItems
+                        .Where(t => t.CreatedDateTime > referenceItem.CreatedDateTime)
+                        .OrderBy(t => t.CreatedDateTime)
+                        .Take(count)
+                        .ToListAsync(timeoutCancellationTokenSource.Token);
+
+                    if (newItems.Any())
+                    {
+                        return newItems;
+                    }
+
+                    await Task.Delay(5000, timeoutCancellationTokenSource.Token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    throw;
+                }
+            }
+        }
+
+        return new List<TodoItem>();
     }
 }
