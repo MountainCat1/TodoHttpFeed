@@ -6,6 +6,9 @@ Project consists of two services:
 2. CmdApp _aka_ Feed Client - A command line application that consumes the feed from the Feed Service and saves the todo items to a json file.
 ## How To Run
 1. Clone the repository
+```bash
+git clone https://github.com/MountainCat1/TodoHttpFeed.git
+```
 2. Run
 ```bash
 docker compose up
