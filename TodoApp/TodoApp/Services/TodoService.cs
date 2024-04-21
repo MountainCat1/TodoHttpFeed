@@ -127,6 +127,8 @@ public class TodoItemService : ITodoItemService
             }
             catch (OperationCanceledException)
             {
+                // If the operation was canceled, we throw the exception
+                // It it wasn't it means the timeout was reached
                 if (ct.IsCancellationRequested)
                 {
                     throw;
