@@ -6,5 +6,11 @@ services:
       - "8001:80"
     environment:
         - ASPNETCORE_ENVIRONMENT=Development
-#    depends_on:
-#      - db
+        - DO_MIGRATE=true
+  cmd-app:
+    build: ./CmdApp/
+    environment:
+        - ASPNETCORE_ENVIRONMENT=Development
+        - BACKEND_URL=http://todo-api:80
+    depends_on: 
+        - todo-api

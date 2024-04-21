@@ -1,15 +1,18 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using TodoApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 var config = builder.Configuration;
 
 var services = builder.Services;
 
-services.AddControllers();
+services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });;
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 
@@ -31,5 +34,12 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+if(config.GetValue("DO_MIGRATE", false) == true)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();

@@ -1,91 +1,37 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.Serialization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using CmdApp.Models;
 
 namespace CmdApp;
 
 public static class Program
 {
+    private const string BaseUrl = "http://localhost:5000/";
+    private const string LastIdPath = "lastTodoId.txt"; // File to store the last ID
+    private const string JsonFilePath = "todo-items.json"; // JSON file path
+    
     static async Task Main(string[] args)
     {
-        HttpClient client = new HttpClient();
-        string baseUrl = "http://localhost:5000/api/todo-items/feed";
-        string lastTodoId = null; // To store the last received TodoItem ID
-        string lastIdPath = "lastTodoId.txt"; // File to store the last ID
-        string jsonFilePath = "ToDoItemsCurrentSnapshot.json"; // JSON file path
-
-        // Try to read the last Todo ID from file if exists
-        if (File.Exists(lastIdPath))
+        var options = new JsonSerializerOptions
         {
-            lastTodoId = File.ReadAllText(lastIdPath);
-        }
+            PropertyNameCaseInsensitive = true,
+            Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+        };
+        
+        HttpClient client = new HttpClient()
+        {
+            BaseAddress = new Uri(Environment.GetEnvironmentVariable("BACKEND_URL") ?? BaseUrl)
+        };
 
         List<TodoItem> existingItems = new List<TodoItem>();
-        if (File.Exists(jsonFilePath))
+        if (File.Exists(JsonFilePath))
         {
-            string existingJson = File.ReadAllText(jsonFilePath);
+            string existingJson = File.ReadAllText(JsonFilePath);
             existingItems = JsonSerializer.Deserialize<List<TodoItem>>(existingJson) ?? new List<TodoItem>();
         }
-
-        while (true)
-        {
-            try
-            {
-                string url = baseUrl;
-                if (!string.IsNullOrEmpty(lastTodoId))
-                {
-                    url += $"?lastTodoId={lastTodoId}&count=5&timeout=30"; // Request 5 items at a time
-                }
-
-                var response = await client.GetAsync(url);
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var feedResponse = JsonSerializer.Deserialize<FeedResponse>(content,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    if (feedResponse.Data.Count > 0)
-                    {
-                        lastTodoId = feedResponse.LastTodoId;
-                        File.WriteAllText(lastIdPath, lastTodoId);
-
-                        existingItems.AddRange(feedResponse.Data);
-
-                        File.WriteAllText(jsonFilePath,
-                            JsonSerializer.Serialize(existingItems,
-                                new JsonSerializerOptions { WriteIndented = true }));
-                        Console.WriteLine($"Received {feedResponse.Data.Count} new items, snapshot updated.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("No new items received.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Failed to fetch data: {response.StatusCode}");
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error: " + e.Message);
-            }
-
-            await Task.Delay(500); 
-        }
-        // ReSharper disable once FunctionNeverReturns
-    }
-
-    class FeedResponse
-    {
-        public List<TodoItem> Data { get; set; }
-        public int Count { get; set; }
-        public string LastTodoId { get; set; }
-        public string Next { get; set; }
-    }
-
-    class TodoItem
-    {
-        public Guid Id { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
+        
+        var clientService = new ClientService(client, LastIdPath, JsonFilePath);
+        await clientService.StartAsync(existingItems);
     }
 }

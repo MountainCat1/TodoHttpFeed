@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TodoApp.Services;
 
@@ -10,9 +11,11 @@ using TodoApp.Services;
 namespace TodoApp.Migrations
 {
     [DbContext(typeof(TodoDbContext))]
-    partial class TodoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240421134732_AddTodoItemEvents")]
+    partial class AddTodoItemEvents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.18");
@@ -51,15 +54,11 @@ namespace TodoApp.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Method")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Method")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Time")
                         .HasColumnType("TEXT");
