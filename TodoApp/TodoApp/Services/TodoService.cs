@@ -12,7 +12,7 @@ public interface ITodoItemService
     Task<TodoItem> UpdateTodoAsync(Guid todoId, string updateDtoTitle, string updateDtoDescription);
 
     Task<ICollection<TodoItemEvent>> GetFeedAsync(
-        Guid? lastTodoId,
+        Guid? lastEventId,
         int count,
         int timeout = 5,
         CancellationToken ct = default);
@@ -84,12 +84,12 @@ public class TodoItemService : ITodoItemService
     }
 
     public async Task<ICollection<TodoItemEvent>> GetFeedAsync(
-        Guid? lastTodoId,
+        Guid? lastEventId,
         int count,
         int timeout = 5,
         CancellationToken ct = default)
     {
-        if (lastTodoId == null)
+        if (lastEventId == null)
         {
             return await _context.TodoItemEvents
                 .OrderBy(t => t.Time)
@@ -99,10 +99,10 @@ public class TodoItemService : ITodoItemService
 
         var referenceItem = await _context.TodoItemEvents
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == lastTodoId, cancellationToken: ct);
+            .FirstOrDefaultAsync(t => t.Id == lastEventId, cancellationToken: ct);
 
         if (referenceItem == null)
-            throw new ArgumentException("Invalid reference item", nameof(lastTodoId));
+            throw new ArgumentException("Invalid reference item", nameof(lastEventId));
 
         using (var timeoutCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct))
         {
